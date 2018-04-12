@@ -21,7 +21,7 @@ msgstr ""
 
 #: ckanext/qa/reports.py:164
 msgid "Openness (Five Stars)"
-msgstr ""
+msgstr "Відкритість (5 зірок)"
 
 #: ckanext/qa/reports.py:165
 msgid ""
@@ -152,7 +152,7 @@ msgstr ""
 #: ckanext/qa/templates/qa/openness_stars.html:23
 #: ckanext/qa/templates/snippets/organization.html:9
 msgid "Openness"
-msgstr ""
+msgstr "Відкритість"
 
 #: ckanext/qa/templates/qa/openness_stars.html:25
 #: ckanext/qa/templates/qa/openness_stars_brief.html:23
