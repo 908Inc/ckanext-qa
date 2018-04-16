@@ -10,12 +10,22 @@ from ckanext.qa.model import QA, aggregate_qa_for_a_dataset
 from ckanext.qa import helpers
 from ckanext.qa import lib
 from ckanext.report.interfaces import IReport
-
+import ckan.plugins.toolkit as toolkit
 
 log = logging.getLogger(__name__)
 
 
-class QAPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
+if toolkit.check_ckan_version(min_version='2.5'):
+    from ckan.lib.plugins import DefaultTranslation
+
+    class QAPluginBase(p.SingletonPlugin, DefaultTranslation):
+        p.implements(p.ITranslation, inherit=True)
+else:
+    class QAPluginBase(p.SingletonPlugin):
+        pass
+
+
+class QAPlugin(QAPluginBase, p.toolkit.DefaultDatasetForm):
     p.implements(p.IConfigurer, inherit=True)
     p.implements(p.IRoutes, inherit=True)
     p.implements(IPipe, inherit=True)
