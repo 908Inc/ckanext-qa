@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ckanext-qa 2.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2018-06-04 18:58+0000\n"
+"POT-Creation-Date: 2018-06-06 18:06+0000\n"
 "PO-Revision-Date: 2018-04-11 16:15+0000\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: uk_UA\n"
@@ -50,7 +50,7 @@ msgstr "Ліцензія не відкривається"
 msgid "File could not be downloaded."
 msgstr "Неможливо завантажити файл."
 
-#: ckanext/qa/tasks.py:270 ckanext/qa/tasks.py:343 ckanext/qa/tasks.py:348
+#: ckanext/qa/tasks.py:270 ckanext/qa/tasks.py:344 ckanext/qa/tasks.py:349
 #: ckanext/qa/templates/qa/openness_stars.html:24
 #: ckanext/qa/templates/qa/openness_stars_brief.html:23
 #: ckanext/qa/templates/report/openness.html:88
@@ -85,7 +85,7 @@ msgstr "Відбулось %s спроби з %s."
 msgid "This URL has not worked in the history of this tool."
 msgstr "Це посилання не використовувалось в історії цього інструменту."
 
-#: ckanext/qa/tasks.py:321 ckanext/qa/tasks.py:351
+#: ckanext/qa/tasks.py:321 ckanext/qa/tasks.py:352
 msgid "This file had not been downloaded at the time of scoring it."
 msgstr "Цей файл не був завантажений тоді, коли його оцінювали."
 
@@ -101,32 +101,32 @@ msgid ""
 "score: %s."
 msgstr "Вміст файлу має формат \"%s\". Такий файл отримує оцінку відкритості: %s."
 
-#: ckanext/qa/tasks.py:337
+#: ckanext/qa/tasks.py:338
 msgid "The format of the file was not recognized from its contents."
 msgstr "Формат файлу не був розпізнаним по його вмісту."
 
-#: ckanext/qa/tasks.py:342
+#: ckanext/qa/tasks.py:343
 msgid "File was not downloaded deliberately"
 msgstr "Файл був завантажений випадково"
 
-#: ckanext/qa/tasks.py:343 ckanext/qa/tasks.py:348
+#: ckanext/qa/tasks.py:344 ckanext/qa/tasks.py:349
 msgid "Using other methods to determine file openness."
 msgstr "Використовуються інші способи визначення відкритості файлу."
 
-#: ckanext/qa/tasks.py:347
+#: ckanext/qa/tasks.py:348
 msgid "A system error occurred during downloading this file"
 msgstr "Виникла системна помилка протягом завантаження файлу."
 
-#: ckanext/qa/tasks.py:368
+#: ckanext/qa/tasks.py:369
 msgid "Could not determine a file extension in the URL."
 msgstr "Неможливо визначити розширення файлу за посиланням."
 
-#: ckanext/qa/tasks.py:375
+#: ckanext/qa/tasks.py:376
 #, python-format
 msgid "URL extension \"%s\" relates to format \"%s\" and receives score: %s."
 msgstr "Розширення посилання \"%s\" відповідає формату \"%s\" та оцінюється в: %s."
 
-#: ckanext/qa/tasks.py:379
+#: ckanext/qa/tasks.py:380
 #, python-format
 msgid ""
 "URL extension \"%s\" relates to format \"%s\" but a score for that format"
@@ -135,21 +135,21 @@ msgstr ""
 "Розширення посилання \"%s\" відповідає формату \"%s\", проте оцінка "
 "формату не сконфігурована. Тож, подається оцінка за замовчуванням %s."
 
-#: ckanext/qa/tasks.py:381
+#: ckanext/qa/tasks.py:382
 #, python-format
 msgid "URL extension \"%s\" is an unknown format."
 msgstr "Розширення посилання \"%s\" має невідомий формат."
 
-#: ckanext/qa/tasks.py:417
+#: ckanext/qa/tasks.py:418
 msgid "Format field is blank."
 msgstr "Поле формату є порожнім."
 
-#: ckanext/qa/tasks.py:422
+#: ckanext/qa/tasks.py:423
 #, python-format
 msgid "Format field \"%s\" does not correspond to a known format."
 msgstr "Поле формату \"%s\" не відповідає відомому формату."
 
-#: ckanext/qa/tasks.py:425
+#: ckanext/qa/tasks.py:426
 #, python-format
 msgid "Format field \"%s\" receives score: %s."
 msgstr "Поле формату \"%s\" оцінюється в: %s."
