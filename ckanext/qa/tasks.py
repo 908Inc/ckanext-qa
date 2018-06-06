@@ -331,7 +331,8 @@ def score_by_sniffing_data(archival, resource, score_reasons, log):
             score = lib.resource_format_scores().get(sniffed_format['format']) \
                 if sniffed_format else None
             if sniffed_format:
-                score_reasons.append(_('Content of file appeared to be format "%s" which receives openness score: %s.') % (sniffed_format['format'], score))
+                msg = _('Content of file appeared to be format "%s" which receives openness score: %s.')
+                score_reasons.append(msg % (sniffed_format['format'], score))
                 return score, sniffed_format['format']
             else:
                 score_reasons.append(_('The format of the file was not recognized from its contents.'))
