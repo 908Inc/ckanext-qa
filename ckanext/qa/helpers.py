@@ -14,6 +14,8 @@ def qa_openness_stars_resource_html(resource):
     # render the debug in the footer those extra keys take about 30s to render,
     # for some reason.
     extra_vars = copy.deepcopy(qa)
+    if "openness_score_reason" in extra_vars:
+        extra_vars["openness_score_reason"] = tk._(extra_vars["openness_score_reason"])
     return tk.literal(
         tk.render('qa/openness_stars.html',
                   extra_vars=extra_vars))
@@ -26,6 +28,8 @@ def qa_openness_stars_dataset_html(dataset):
     if not isinstance(qa, dict):
         return tk.literal('<!-- QA info was of the wrong type -->')
     extra_vars = copy.deepcopy(qa)
+    if "openness_score_reason" in extra_vars:
+        extra_vars["openness_score_reason"] = tk._(extra_vars["openness_score_reason"])
     return tk.literal(
         tk.render('qa/openness_stars_brief.html',
                   extra_vars=extra_vars))
