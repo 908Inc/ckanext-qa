@@ -4,6 +4,7 @@ import datetime
 from sqlalchemy import Column
 from sqlalchemy import types
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.exc import ProgrammingError
 
 import ckan.model as model
 from ckan.lib import dictization
@@ -16,6 +17,18 @@ Base = declarative_base()
 
 def make_uuid():
     return unicode(uuid.uuid4())
+
+
+class QAMigrations(Base):
+
+    __tablename__ = 'qa_migrations'
+
+    id = Column(types.UnicodeText, primary_key=True, default=make_uuid)
+    created = Column(types.DateTime, default=datetime.datetime.now)
+
+    @classmethod
+    def count(cls):
+        return model.Session.query(cls).count()
 
 
 class QA(Base):
@@ -33,6 +46,7 @@ class QA(Base):
 
     openness_score = Column(types.Integer)
     openness_score_reason = Column(types.UnicodeText)
+    openness_score_reason_args = Column(types.UnicodeText)
     format = Column(types.UnicodeText)
 
     created = Column(types.DateTime, default=datetime.datetime.now)
@@ -106,6 +120,7 @@ def aggregate_qa_for_a_dataset(qa_objs):
                 qa.openness_score > qa_dict['openness_score']:
             qa_dict['openness_score'] = qa.openness_score
             qa_dict['openness_score_reason'] = qa.openness_score_reason
+            qa_dict['openness_score_reason_args'] = qa.openness_score_reason_args
         # updated is the newest of all the resources
         if qa_dict['updated'] is None or \
                 qa.updated > qa_dict['updated']:
@@ -118,3 +133,23 @@ def aggregate_qa_for_a_dataset(qa_objs):
 def init_tables(engine):
     Base.metadata.create_all(engine)
     log.info('QA database tables are set-up')
+
+    migration_number = QAMigrations.count()
+    log.info('Migration number: %s', migration_number)
+    migration_sql_list = [
+        "ALTER TABLE qa ADD COLUMN openness_score_reason_args TEXT;"
+    ]
+    for counter, sql in enumerate(migration_sql_list, start=1):
+        if migration_number < counter:
+            try:
+                log.debug(sql)
+                model.Session.execute(sql)
+            except ProgrammingError as e:
+                print(e)
+                log.debug('Migration have been rolled back.')
+                model.Session.rollback()
+            finally:
+                model.Session.add(QAMigrations())
+                model.Session.commit()
+
+    model.Session.close()

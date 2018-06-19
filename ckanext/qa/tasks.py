@@ -200,34 +200,38 @@ def resource_score(resource, log):
 
     try:
         score_reasons = []  # a list of strings detailing how we scored it
+        score_reasons_args = []  # a list of arguments for score reasons
         archival = Archival.get_for_resource(resource_id=resource.id)
         if not resource:
             raise QAError('Could not find resource "%s"' % resource.id)
 
-        score, format_ = score_if_link_broken(archival, resource, score_reasons, log)
-        if score == None:
+        score, format_ = score_if_link_broken(archival, resource, score_reasons, log, score_reasons_args)
+        if score is None:
             # we don't want to take the publisher's word for it, in case the link
             # is only to a landing page, so highest priority is the sniffed type
             score, format_ = score_by_sniffing_data(archival, resource,
-                                                    score_reasons, log)
+                                                    score_reasons, log,
+                                                    score_reasons_args)
             if score == None:
                 # Fall-backs are user-given data
-                score, format_ = score_by_url_extension(resource, score_reasons, log)
+                score, format_ = score_by_url_extension(resource, score_reasons, log, score_reasons_args)
                 if score == None:
-                    score, format_ = score_by_format_field(resource, score_reasons, log)
+                    score, format_ = score_by_format_field(resource, score_reasons, log, score_reasons_args)
                     if score == None:
                         log.warning('Could not score resource: "%s" with url: "%s"',
                                     resource.id, resource.url)
                         score_reasons.append(_('Could not understand the file format, therefore score is 1.'))
+                        score_reasons_args.append(tuple())
                         score = 1
                         if format_ == None:
                             # use any previously stored format value for this resource
                             format_ = get_qa_format(resource.id)
-        score_reason = ' '.join(score_reasons)
+        score_reason = '||'.join(score_reasons)
         format_ = format_ or None
     except Exception, e:
         log.error('Unexpected error while calculating openness score %s: %s\nException: %s', e.__class__.__name__,  unicode(e), traceback.format_exc())
-        score_reason = _("Unknown error: %s") % str(e)
+        score_reason = _("Unknown error: %s")
+        score_reasons_args = [str(e)]
         raise
 
     # Even if we can get the link, we should still treat the resource
@@ -251,6 +255,7 @@ def resource_score(resource, log):
     result = {
         'openness_score': score,
         'openness_score_reason': score_reason,
+        'openness_score_reason_args': score_reasons_args,
         'format': format_,
         'archival_timestamp': archival_updated
     }
@@ -267,27 +272,32 @@ def broken_link_error_message(archival):
         else:
             return ''
     messages = [_('File could not be downloaded.'),
-                _('Reason') + ':', unicode(archival.status) + '.',
-                _('Error details: %s.') % archival.reason,
-                _('Attempted on %s.') % format_date(archival.updated)]
+                _('Reason: %s .'),
+                _('Error details: %s.'),
+                _('Attempted on %s.')]
+    args = [unicode(archival.status),
+            archival.reason,
+            format_date(archival.updated)]
     last_success = format_date(archival.last_success)
     if archival.failure_count == 1:
         if last_success:
-            messages.append(_('This URL last worked on: %s.') % last_success)
+            messages.append(_('This URL last worked on: %s.'))
+            args.append(last_success)
         else:
             messages.append(_('This was the first attempt.'))
     else:
-        messages.append(_('Tried %s times since %s.') % \
-                        (archival.failure_count,
-                         format_date(archival.first_failure)))
+        messages.append(_('Tried %s times since %s.'))
+        args.append(archival.failure_count)
+        args.append(format_date(archival.first_failure))
         if last_success:
-            messages.append(_('This URL last worked on: %s.') % last_success)
+            messages.append(_('This URL last worked on: %s.'))
+            args.append(last_success)
         else:
             messages.append(_('This URL has not worked in the history of this tool.'))
-    return ' '.join(messages)
+    return ' '.join(messages), args
 
 
-def score_if_link_broken(archival, resource, score_reasons, log):
+def score_if_link_broken(archival, resource, score_reasons, log, score_reasons_args):
     '''
     Looks to see if the archiver said it was broken, and if so, writes to
     the score_reasons and returns a score.
@@ -300,13 +310,15 @@ def score_if_link_broken(archival, resource, score_reasons, log):
     '''
     if archival and archival.is_broken:
         # Score 0 since we are sure the link is currently broken
-        score_reasons.append(broken_link_error_message(archival))
+        template, args = broken_link_error_message(archival)
+        score_reasons.append(template)
+        score_reasons_args.append(args)
         format_ = get_qa_format(resource.id)
         log.info('Archiver says link is broken. Previous format: %r' % format_)
-        return (0, format_)
-    return (None, None)
+        return 0, format
+    return None, None
 
-def score_by_sniffing_data(archival, resource, score_reasons, log):
+def score_by_sniffing_data(archival, resource, score_reasons, log, score_reasons_args):
     '''
     Looks inside a data file\'s contents to determine its format and score.
 
@@ -319,12 +331,14 @@ def score_by_sniffing_data(archival, resource, score_reasons, log):
     '''
     if not archival or not archival.cache_filepath:
         score_reasons.append(_('This file had not been downloaded at the time of scoring it.'))
-        return (None, None)
+        score_reasons_args(tuple())
+        return None, None
     # Analyse the cached file
     filepath = archival.cache_filepath
     if not os.path.exists(filepath):
-        score_reasons.append(_('Cache filepath does not exist: "%s".') % filepath)
-        return (None, None)
+        score_reasons.append(_('Cache filepath does not exist: "%s".'))
+        score_reasons_args.append(filepath)
+        return None, None
     else:
         if filepath:
             sniffed_format = sniff_file_format(filepath, log)
@@ -332,28 +346,31 @@ def score_by_sniffing_data(archival, resource, score_reasons, log):
                 if sniffed_format else None
             if sniffed_format:
                 msg = _('Content of file appeared to be format "%s" which receives openness score: %s.')
-                score_reasons.append(msg % (sniffed_format['format'], score))
+                score_reasons.append(msg )
+                score_reasons_args.append((sniffed_format['format'], score))
                 return score, sniffed_format['format']
             else:
                 score_reasons.append(_('The format of the file was not recognized from its contents.'))
-                return (None, None)
+                score_reasons_args.append(tuple())
+                return None, None
         else:
             # No cache_url
             if archival.status_id == Status.by_text('Chose not to download'):
-                score_reasons.append(_('File was not downloaded deliberately') + '. '
-                                     + _('Reason') + ': %s. ' % archival.reason + _('Using other methods to determine file openness.'))
-                return (None, None)
+                score_reasons.append(_('File was not downloaded deliberately. Reason: %s. Using other methods to determine file openness.'))
+                score_reasons_args.append(archival.reason)
+                return None, None
             elif archival.is_broken is None and archival.status_id:
                 # i.e. 'Download failure' or 'System error during archival'
-                score_reasons.append(_('A system error occurred during downloading this file') + '. '
-                                       + _('Reason') + ': %s. ' % archival.reason + _('Using other methods to determine file openness.'))
-                return (None, None)
+                score_reasons.append(_('A system error occurred during downloading this file. Reason: %s. Using other methods to determine file openness.'))
+                score_reasons_args.append(archival.reason)
+                return None, None
             else:
                 score_reasons.append(_('This file had not been downloaded at the time of scoring it.'))
-                return (None, None)
+                score_reasons_args.tuple()
+                return None, None
 
 
-def score_by_url_extension(resource, score_reasons, log):
+def score_by_url_extension(resource, score_reasons, log, score_reasons_args):
     '''
     Looks at the URL for a resource to determine its format and score.
 
@@ -367,20 +384,24 @@ def score_by_url_extension(resource, score_reasons, log):
     extension_variants_ = extension_variants(resource.url.strip())
     if not extension_variants_:
         score_reasons.append(_('Could not determine a file extension in the URL.'))
-        return (None, None)
+        score_reasons_args.append(tuple())
+        return None, None
     for extension in extension_variants_:
         format_ = format_get(extension)
         if format_:
             score = lib.resource_format_scores().get(format_)
             if score:
-                score_reasons.append(_('URL extension "%s" relates to format "%s" and receives score: %s.') % (extension, format_, score))
+                score_reasons.append(_('URL extension "%s" relates to format "%s" and receives score: %s.'))
+                score_reasons_args.append((extension, format_, score))
                 return score, format_
             else:
                 score = 1
-                score_reasons.append(_('URL extension "%s" relates to format "%s" but a score for that format is not configured, so giving it default score %s.') % (extension, format_, score))
+                score_reasons.append(_('URL extension "%s" relates to format "%s" but a score for that format is not configured, so giving it default score %s.'))
+                score_reasons_args.append((extension, format_, score))
                 return score, format_
-        score_reasons.append(_('URL extension "%s" is an unknown format.') % extension)
-    return (None, None)
+        score_reasons.append(_('URL extension "%s" is an unknown format.'))
+        score_reasons_args.append(extension)
+    return None, None
 
 def extension_variants(url):
     '''
@@ -402,7 +423,7 @@ def extension_variants(url):
     return results
 
 
-def score_by_format_field(resource, score_reasons, log):
+def score_by_format_field(resource, score_reasons, log, score_reasons_args):
     '''
     Looks at the format field of a resource to determine its format and score.
 
@@ -416,16 +437,18 @@ def score_by_format_field(resource, score_reasons, log):
     format_field = resource.format or ''
     if not format_field:
         score_reasons.append(_('Format field is blank.'))
-        return (None, None)
+        score_reasons_args.append(tuple())
+        return None, None
     format_tuple = ckan_helpers.resource_formats().get(format_field.lower()) or \
         ckan_helpers.resource_formats().get(lib.munge_format_to_be_canonical(format_field))
     if not format_tuple:
-        score_reasons.append(_('Format field "%s" does not correspond to a known format.') % format_field)
-        return (None, None)
+        score_reasons.append(_('Format field "%s" does not correspond to a known format.'))
+        score_reasons_args.append(format_field)
+        return None, None
     score = lib.resource_format_scores().get(format_tuple[1])
-    score_reasons.append(_('Format field "%s" receives score: %s.') %
-                         (format_field, score))
-    return (score, format_tuple[1])
+    score_reasons.append(_('Format field "%s" receives score: %s.'))
+    score_reasons_args.append((format_field, score))
+    return score, format_tuple[1]
 
 
 def _update_search_index(package_id, log):
@@ -460,6 +483,7 @@ def save_qa_result(resource, qa_result, log):
 
     for key in ('openness_score', 'openness_score_reason', 'format'):
         setattr(qa, key, qa_result[key])
+    qa.openness_score_reason_args = json.dumps(qa_result['openness_score_reason_args'])
     qa.archival_timestamp = qa_result['archival_timestamp']
     qa.updated = now
 

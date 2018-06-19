@@ -1,4 +1,5 @@
 import copy
+import json
 from ckan.plugins import toolkit as tk
 
 
@@ -15,7 +16,12 @@ def qa_openness_stars_resource_html(resource):
     # for some reason.
     extra_vars = copy.deepcopy(qa)
     if "openness_score_reason" in extra_vars:
-        extra_vars["openness_score_reason"] = tk._(extra_vars["openness_score_reason"])
+        messages = list()
+        for template, args in zip(extra_vars["openness_score_reason"].split("||"),
+                            json.loads(extra_vars["openness_score_reason_args"])):
+            messages.append(tk._(template) % tuple(args))
+
+        extra_vars["openness_score_reason"] = " ".join(messages)
     return tk.literal(
         tk.render('qa/openness_stars.html',
                   extra_vars=extra_vars))
@@ -29,7 +35,13 @@ def qa_openness_stars_dataset_html(dataset):
         return tk.literal('<!-- QA info was of the wrong type -->')
     extra_vars = copy.deepcopy(qa)
     if "openness_score_reason" in extra_vars:
-        extra_vars["openness_score_reason"] = tk._(extra_vars["openness_score_reason"])
+        messages = list()
+        for template, args in zip(
+                extra_vars["openness_score_reason"].split("||"),
+                json.loads(extra_vars["openness_score_reason_args"])):
+            messages.append(tk._(template) % tuple(args))
+
+        extra_vars["openness_score_reason"] = " ".join(messages)
     return tk.literal(
         tk.render('qa/openness_stars_brief.html',
                   extra_vars=extra_vars))
