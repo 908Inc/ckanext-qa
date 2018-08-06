@@ -20,7 +20,10 @@ def qa_openness_stars_resource_html(resource):
             messages = list()
             for template, args in zip(extra_vars["openness_score_reason"].split("||"),
                                       json.loads(extra_vars["openness_score_reason_args"])):
-                messages.append(tk._(template) % tuple(args))
+                try:
+                    messages.append(tk._(template) % tuple(args))
+                except TypeError:
+                    messages.append(tk._(template))
 
             extra_vars["openness_score_reason"] = " ".join(messages)
         else:
@@ -42,7 +45,10 @@ def qa_openness_stars_dataset_html(dataset):
             messages = list()
             for template, args in zip(extra_vars["openness_score_reason"].split("||"),
                                       json.loads(extra_vars["openness_score_reason_args"])):
-                messages.append(tk._(template) % tuple(args))
+                try:
+                    messages.append(tk._(template) % tuple(args))
+                except TypeError:
+                    messages.append(tk._(template))
 
             extra_vars["openness_score_reason"] = " ".join(messages)
         else:
