@@ -331,7 +331,7 @@ def score_by_sniffing_data(archival, resource, score_reasons, log, score_reasons
     '''
     if not archival or not archival.cache_filepath:
         score_reasons.append(_('This file had not been downloaded at the time of scoring it.'))
-        score_reasons_args(tuple())
+        score_reasons_args.append(tuple())
         return None, None
     # Analyse the cached file
     filepath = archival.cache_filepath
